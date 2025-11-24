@@ -252,12 +252,7 @@ export default function LoginPage() {
 
             {/* Progress bar */}
             <div className="w-64 h-2 bg-slate-800/50 rounded-full overflow-hidden backdrop-blur-sm">
-              <div className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]"
-                   style={{
-                     width: '100%',
-                     animation: 'shimmer 1.5s ease-in-out infinite',
-                   }}
-              />
+              <div className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full animate-shimmer w-full" />
             </div>
           </div>
 
@@ -278,28 +273,6 @@ export default function LoginPage() {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes shimmer {
-          0%, 100% {
-            transform: translateX(-100%);
-          }
-          50% {
-            transform: translateX(100%);
-          }
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0) scale(1);
-            opacity: 0;
-          }
-          50% {
-            transform: translateY(-100px) scale(1.5);
-            opacity: 0.5;
-          }
-        }
-      `}</style>
     </div>
   )
 }
