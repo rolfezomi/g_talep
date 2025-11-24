@@ -1,11 +1,12 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Bell, Search, Settings, LogOut } from 'lucide-react'
+import { Bell, Search, Settings, LogOut, Shield } from 'lucide-react'
 
 interface NavbarProps {
   user?: {
@@ -15,8 +16,32 @@ interface NavbarProps {
 }
 
 export function Navbar({ user }: NavbarProps) {
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    checkAdminStatus()
+  }, [])
+
+  const checkAdminStatus = async () => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authUser.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+      }
+    } catch (err) {
+      console.error('Error checking admin status:', err)
+    }
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -44,6 +69,12 @@ export function Navbar({ user }: NavbarProps) {
             <Link href="/talepler" className="text-sm font-medium hover:text-primary transition-colors">
               Talepler
             </Link>
+            {isAdmin && (
+              <Link href="/admin/kullanicilar" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                Admin Panel
+              </Link>
+            )}
           </div>
         </div>
 
@@ -54,9 +85,11 @@ export function Navbar({ user }: NavbarProps) {
           <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
-          </Button>
+          <Link href="/ayarlar">
+            <Button variant="ghost" size="icon">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
 
           <div className="flex items-center gap-3">
             <Avatar>
