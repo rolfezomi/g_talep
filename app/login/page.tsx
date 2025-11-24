@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setShowLoadingScreen(true)
     setError('')
 
     try {
@@ -32,10 +34,14 @@ export default function LoginPage() {
 
       if (error) throw error
 
+      // Add a slight delay to show the loading screen
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
       router.push('/dashboard')
       router.refresh()
     } catch (error: any) {
       setError(error.message || 'Giriş yapılırken bir hata oluştu')
+      setShowLoadingScreen(false)
     } finally {
       setLoading(false)
     }
@@ -78,9 +84,6 @@ export default function LoginPage() {
             <CardTitle className="text-2xl font-bold text-center text-white">
               Talep Yönetim Sistemi
             </CardTitle>
-            <CardDescription className="text-center text-slate-400">
-              Dijital Projeler Müdürlüğü
-            </CardDescription>
           </div>
         </CardHeader>
 
@@ -176,6 +179,127 @@ export default function LoginPage() {
           </div>
         </div>
       </Card>
+
+      {/* Premium Loading Screen */}
+      {showLoadingScreen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
+          {/* Animated particles */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/30 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
+            <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          </div>
+
+          {/* Grid background */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,.1)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,.1)_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
+
+          {/* Main loading content */}
+          <div className="relative z-10 flex flex-col items-center space-y-8">
+            {/* Logo with animated glow */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full blur-3xl opacity-50 animate-pulse" />
+              <div className="relative bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-2xl">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Building2 className="h-16 w-16 text-cyan-400 animate-pulse" />
+                    <Sparkles className="h-8 w-8 text-purple-400 absolute -top-2 -right-2 animate-spin" style={{ animationDuration: '3s' }} />
+                  </div>
+                  <div>
+                    <h1 className="text-5xl font-black tracking-tight">
+                      <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-pulse">
+                        GLOHE
+                      </span>
+                    </h1>
+                    <p className="text-sm text-slate-400 font-medium tracking-wider">
+                      DIGITAL EXCELLENCE
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Animated spinner */}
+            <div className="relative">
+              {/* Outer ring */}
+              <div className="w-24 h-24 rounded-full border-4 border-slate-800/50" />
+
+              {/* Animated gradient ring */}
+              <div className="absolute inset-0 w-24 h-24 rounded-full border-4 border-transparent border-t-cyan-400 border-r-purple-400 border-b-pink-400 animate-spin" />
+
+              {/* Inner glow */}
+              <div className="absolute inset-4 rounded-full bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 blur-xl animate-pulse" />
+
+              {/* Center dot */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 animate-pulse" />
+            </div>
+
+            {/* Loading text */}
+            <div className="text-center space-y-3">
+              <h2 className="text-2xl font-bold text-white animate-pulse">
+                Giriş Yapılıyor
+              </h2>
+              <p className="text-slate-400 text-sm font-medium">
+                Lütfen bekleyiniz...
+              </p>
+
+              {/* Animated dots */}
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" />
+                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div className="w-2 h-2 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '0.4s' }} />
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-64 h-2 bg-slate-800/50 rounded-full overflow-hidden backdrop-blur-sm">
+              <div className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]"
+                   style={{
+                     width: '100%',
+                     animation: 'shimmer 1.5s ease-in-out infinite',
+                   }}
+              />
+            </div>
+          </div>
+
+          {/* Floating particles */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-1 h-1 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full opacity-50 animate-float"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                  animationDuration: `${3 + Math.random() * 4}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes shimmer {
+          0%, 100% {
+            transform: translateX(-100%);
+          }
+          50% {
+            transform: translateX(100%);
+          }
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0) scale(1);
+            opacity: 0;
+          }
+          50% {
+            transform: translateY(-100px) scale(1.5);
+            opacity: 0.5;
+          }
+        }
+      `}</style>
     </div>
   )
 }
