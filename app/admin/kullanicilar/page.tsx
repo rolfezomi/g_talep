@@ -134,6 +134,13 @@ export default function AdminKullanicilarPage() {
   }
 
   const updateUserDepartment = async (userId: string, departmentId: string) => {
+    // Find current user to check if value actually changed
+    const currentUser = users.find(u => u.id === userId)
+    if (!currentUser || currentUser.department_id === departmentId) {
+      console.log('Department unchanged, skipping update')
+      return // Don't update if value hasn't changed
+    }
+
     setUpdating(userId)
     setError('')
     setSuccess('')
@@ -161,11 +168,10 @@ export default function AdminKullanicilarPage() {
 
       setSuccess('Departman başarıyla güncellendi')
 
-      // Reload to ensure consistency
+      // Clear success message after 3 seconds (no reload)
       setTimeout(() => {
-        loadUsers()
         setSuccess('')
-      }, 2000)
+      }, 3000)
     } catch (err: any) {
       console.error('Failed to update department:', err)
       setError(err.message || 'Güncelleme başarısız oldu')
@@ -176,6 +182,13 @@ export default function AdminKullanicilarPage() {
   }
 
   const updateUserRole = async (userId: string, role: 'admin' | 'department_manager' | 'user') => {
+    // Find current user to check if value actually changed
+    const currentUser = users.find(u => u.id === userId)
+    if (!currentUser || currentUser.role === role) {
+      console.log('Role unchanged, skipping update')
+      return // Don't update if value hasn't changed
+    }
+
     setUpdating(userId)
     setError('')
     setSuccess('')
@@ -200,11 +213,10 @@ export default function AdminKullanicilarPage() {
 
       setSuccess(`Rol başarıyla güncellendi`)
 
-      // Reload to ensure consistency
+      // Clear success message after 3 seconds (no reload)
       setTimeout(() => {
-        loadUsers()
         setSuccess('')
-      }, 2000)
+      }, 3000)
     } catch (err: any) {
       console.error('Failed to update role:', err)
       setError(err.message || 'Güncelleme başarısız oldu')
