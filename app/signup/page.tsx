@@ -2,27 +2,58 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+interface Department {
+  id: string
+  name: string
+  color: string
+}
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [departmentId, setDepartmentId] = useState('')
+  const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('id, name, color')
+        .order('name')
+
+      if (data && !error) {
+        setDepartments(data)
+      }
+    }
+
+    fetchDepartments()
+  }, [supabase])
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    // Validate department selection
+    if (!departmentId) {
+      setError('Lütfen bir departman seçin')
+      setLoading(false)
+      return
+    }
 
     try {
       const { error } = await supabase.auth.signUp({
@@ -32,6 +63,7 @@ export default function SignupPage() {
           data: {
             full_name: fullName,
             role: 'user',
+            department_id: departmentId,
           },
         },
       })
@@ -92,6 +124,33 @@ export default function SignupPage() {
                 required
                 disabled={loading}
               />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="department" className="text-sm font-medium">
+                Departman
+              </label>
+              <Select
+                value={departmentId}
+                onValueChange={setDepartmentId}
+                disabled={loading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Departman seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: dept.color }}
+                        />
+                        {dept.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium">
