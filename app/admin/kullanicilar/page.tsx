@@ -74,38 +74,54 @@ export default function AdminKullanicilarPage() {
   }
 
   const loadUsers = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        full_name,
-        role,
-        department_id,
-        created_at,
-        departments (
+    try {
+      // Fetch users with their departments
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
           id,
-          name,
-          color
-        )
-      `)
-      .order('created_at', { ascending: false })
+          full_name,
+          role,
+          department_id,
+          created_at,
+          departments (
+            id,
+            name,
+            color
+          )
+        `)
+        .order('created_at', { ascending: false })
 
-    if (error) {
-      setError('Kullanıcılar yüklenemedi')
-      return
+      if (error) {
+        console.error('Error loading users:', error)
+        setError('Kullanıcılar yüklenemedi')
+        return
+      }
+
+      // Fetch emails via API route (since auth.admin requires service role)
+      const response = await fetch('/api/admin/get-user-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: data.map(u => u.id) })
+      })
+
+      let emailMap: Record<string, string> = {}
+      if (response.ok) {
+        const emailData = await response.json()
+        emailMap = emailData.emails || {}
+      }
+
+      const usersWithEmails = data.map(user => ({
+        ...user,
+        email: emailMap[user.id] || 'Email yüklenemedi',
+        department: user.departments as Department
+      }))
+
+      setUsers(usersWithEmails)
+    } catch (err) {
+      console.error('Error in loadUsers:', err)
+      setError('Kullanıcılar yüklenirken hata oluştu')
     }
-
-    // Get emails from auth.users
-    const userIds = data.map(u => u.id)
-    const { data: authUsers } = await supabase.auth.admin.listUsers()
-
-    const usersWithEmails = data.map(user => ({
-      ...user,
-      email: authUsers?.users.find(au => au.id === user.id)?.email,
-      department: user.departments as Department
-    }))
-
-    setUsers(usersWithEmails)
   }
 
   const loadDepartments = async () => {
@@ -128,12 +144,32 @@ export default function AdminKullanicilarPage() {
         .update({ department_id: departmentId })
         .eq('id', userId)
 
-      if (error) throw error
+      if (error) {
+        console.error('Update error:', error)
+        throw error
+      }
+
+      // Update local state immediately
+      const selectedDept = departments.find(d => d.id === departmentId)
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.id === userId
+            ? { ...user, department_id: departmentId, department: selectedDept }
+            : user
+        )
+      )
 
       setSuccess('Departman başarıyla güncellendi')
-      await loadUsers()
+
+      // Reload to ensure consistency
+      setTimeout(() => {
+        loadUsers()
+        setSuccess('')
+      }, 2000)
     } catch (err: any) {
+      console.error('Failed to update department:', err)
       setError(err.message || 'Güncelleme başarısız oldu')
+      await loadUsers()
     } finally {
       setUpdating(null)
     }
@@ -150,12 +186,30 @@ export default function AdminKullanicilarPage() {
         .update({ role })
         .eq('id', userId)
 
-      if (error) throw error
+      if (error) {
+        console.error('Update error:', error)
+        throw error
+      }
 
-      setSuccess('Rol başarıyla güncellendi')
-      await loadUsers()
+      // Update local state immediately for instant feedback
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.id === userId ? { ...user, role } : user
+        )
+      )
+
+      setSuccess(`Rol başarıyla güncellendi`)
+
+      // Reload to ensure consistency
+      setTimeout(() => {
+        loadUsers()
+        setSuccess('')
+      }, 2000)
     } catch (err: any) {
+      console.error('Failed to update role:', err)
       setError(err.message || 'Güncelleme başarısız oldu')
+      // Reload on error to show correct state
+      await loadUsers()
     } finally {
       setUpdating(null)
     }
