@@ -841,20 +841,22 @@ export default function TalepDetayPage() {
                   </select>
                 </div>
 
-                {/* Assignee */}
+                {/* Departman Bilgisi */}
                 <div>
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Atanan Kisi</Label>
-                  <select
-                    value={ticket.assigned_to || ''}
-                    onChange={(e) => updateTicket('assigned_to', e.target.value || null)}
-                    disabled={!canEdit || updating}
-                    className="w-full mt-1 h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Atanan Departman</Label>
+                  <div
+                    className="w-full mt-1 h-10 px-3 rounded-md border border-input bg-muted/50 flex items-center gap-2"
                   >
-                    <option value="">Atanmamis</option>
-                    {departmentUsers.map(user => (
-                      <option key={user.id} value={user.id}>{user.full_name}</option>
-                    ))}
-                  </select>
+                    {ticket.department && (
+                      <>
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: ticket.department.color }}
+                        />
+                        <span className="font-medium">{ticket.department.name}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {updating && (
@@ -884,17 +886,6 @@ export default function TalepDetayPage() {
                   </div>
                 </div>
 
-                {ticket.assignee && (
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Atanan</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                        <User className="h-4 w-4 text-emerald-500" />
-                      </div>
-                      <span className="font-medium">{ticket.assignee.full_name}</span>
-                    </div>
-                  </div>
-                )}
 
                 <div className="pt-4 border-t space-y-3">
                   <div className="flex justify-between text-sm">

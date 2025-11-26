@@ -152,28 +152,30 @@ export default function DashboardPage() {
         .limit(5)
       setRecentTickets(tickets || [])
 
-      // Departman istatistikleri
-      const { data: departments } = await supabase
-        .from('departments')
-        .select('id, name, color')
+      // Departman istatistikleri - SADECE ADMIN ICIN
+      if (profileData?.role === 'admin') {
+        const { data: departments } = await supabase
+          .from('departments')
+          .select('id, name, color')
 
-      if (departments) {
-        const deptStats: DepartmentStat[] = []
-        for (const dept of departments) {
-          const { count } = await supabase
-            .from('tickets')
-            .select('*', { count: 'exact', head: true })
-            .eq('department_id', dept.id)
-            .in('status', ['yeni', 'devam_ediyor', 'beklemede'])
+        if (departments) {
+          const deptStats: DepartmentStat[] = []
+          for (const dept of departments) {
+            const { count } = await supabase
+              .from('tickets')
+              .select('*', { count: 'exact', head: true })
+              .eq('department_id', dept.id)
+              .in('status', ['yeni', 'devam_ediyor', 'beklemede'])
 
-          deptStats.push({
-            id: dept.id,
-            name: dept.name,
-            color: dept.color,
-            count: count || 0
-          })
+            deptStats.push({
+              id: dept.id,
+              name: dept.name,
+              color: dept.color,
+              count: count || 0
+            })
+          }
+          setDepartmentStats(deptStats.sort((a, b) => b.count - a.count))
         }
-        setDepartmentStats(deptStats.sort((a, b) => b.count - a.count))
       }
 
     } catch (error) {
@@ -293,37 +295,39 @@ export default function DashboardPage() {
         </Link>
       </motion.div>
 
-      {/* Stats Grid */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {mainStats.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            variants={itemVariants}
-            whileHover={{ scale: 1.02, y: -5 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-          >
-            <Card className={`relative overflow-hidden border ${stat.borderColor} hover:shadow-xl transition-all duration-300`}>
-              <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} rounded-full -translate-y-16 translate-x-16 opacity-50`} />
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
-                <div className={`p-2.5 rounded-xl ${stat.bgColor}`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <motion.div
-                  variants={counterVariants}
-                  className="text-4xl font-bold"
-                >
-                  {stat.value}
-                </motion.div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </motion.div>
+      {/* Stats Grid - SADECE ADMIN ICIN */}
+      {profile?.role === UserRole.ADMIN && (
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {mainStats.map((stat, index) => (
+            <motion.div
+              key={stat.title}
+              variants={itemVariants}
+              whileHover={{ scale: 1.02, y: -5 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
+              <Card className={`relative overflow-hidden border ${stat.borderColor} hover:shadow-xl transition-all duration-300`}>
+                <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} rounded-full -translate-y-16 translate-x-16 opacity-50`} />
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <div className={`p-2.5 rounded-xl ${stat.bgColor}`}>
+                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <motion.div
+                    variants={counterVariants}
+                    className="text-4xl font-bold"
+                  >
+                    {stat.value}
+                  </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
 
       {/* Personal Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -354,14 +358,14 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="h-5 w-5 text-emerald-600" />
-              Bana Atanan Talepler
+              Departmanimdaki Talepler
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-4xl font-bold text-emerald-600">{stats.assignedToMe}</p>
-                <p className="text-sm text-muted-foreground">Uzerinizdeki talepler</p>
+                <p className="text-4xl font-bold text-emerald-600">{stats.total}</p>
+                <p className="text-sm text-muted-foreground">Departmana gelen talepler</p>
               </div>
               <Link href="/talepler">
                 <Button variant="outline" size="sm" className="gap-1">
@@ -457,57 +461,59 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
 
-        {/* Department Stats */}
-        <motion.div variants={itemVariants}>
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                Departman Dagilimi
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {departmentStats.length > 0 ? (
-                <div className="space-y-4">
-                  {departmentStats.map((dept, index) => (
-                    <motion.div
-                      key={dept.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="space-y-2"
-                    >
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
+        {/* Department Stats - SADECE ADMIN ICIN */}
+        {profile?.role === UserRole.ADMIN && (
+          <motion.div variants={itemVariants}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Departman Dagilimi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {departmentStats.length > 0 ? (
+                  <div className="space-y-4">
+                    {departmentStats.map((dept, index) => (
+                      <motion.div
+                        key={dept.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: dept.color }}
+                            />
+                            <span className="font-medium">{dept.name}</span>
+                          </div>
+                          <span className="text-muted-foreground">{dept.count} acik</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min((dept.count / (stats.open || 1)) * 100, 100)}%` }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                            className="h-full rounded-full"
                             style={{ backgroundColor: dept.color }}
                           />
-                          <span className="font-medium">{dept.name}</span>
                         </div>
-                        <span className="text-muted-foreground">{dept.count} acik</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${Math.min((dept.count / (stats.open || 1)) * 100, 100)}%` }}
-                          transition={{ duration: 0.5, delay: index * 0.1 }}
-                          className="h-full rounded-full"
-                          style={{ backgroundColor: dept.color }}
-                        />
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p>Veri bulunamadi</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>Veri bulunamadi</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   )
