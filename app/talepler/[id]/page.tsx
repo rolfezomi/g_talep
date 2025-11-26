@@ -56,7 +56,8 @@ interface Comment {
   id: string
   ticket_id: string
   user_id: string
-  comment: string
+  content?: string
+  comment?: string
   is_internal: boolean
   created_at: string
   user?: { id: string; full_name: string; avatar_url: string | null; role: string }
@@ -580,7 +581,7 @@ export default function TalepDetayPage() {
                                       {formatTimeAgo(comment.created_at)}
                                     </span>
                                   </div>
-                                  <p className="whitespace-pre-wrap text-sm">{comment.comment}</p>
+                                  <p className="whitespace-pre-wrap text-sm">{comment.content || comment.comment}</p>
                                 </div>
                                 {isAdmin && (
                                   <Button

@@ -66,7 +66,8 @@ export async function POST(
     }
 
     // Yorum metni kontrolü
-    if (!body.comment || body.comment.trim().length === 0) {
+    const commentText = body.comment || body.content
+    if (!commentText || commentText.trim().length === 0) {
       return NextResponse.json({ error: 'Yorum metni gerekli' }, { status: 400 })
     }
 
@@ -92,7 +93,7 @@ export async function POST(
       .insert({
         ticket_id: id,
         user_id: user.id,
-        comment: body.comment.trim(),
+        content: commentText.trim(),
         is_internal: body.is_internal || false
       })
       .select(`
