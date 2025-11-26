@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         .insert({
           ticket_id: testTicketId,
           user_id: user.id,
-          comment: 'Test yorum - silinecek',
+          content: 'Test yorum - silinecek',
           is_internal: false
         })
         .select('id')
