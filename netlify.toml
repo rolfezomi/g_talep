@@ -11,7 +11,5 @@
 [context.deploy-preview]
   command = "npm run build"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Next.js plugin handles all routing automatically
+# No manual redirects needed - they break API routes
