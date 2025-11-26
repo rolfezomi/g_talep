@@ -24,7 +24,7 @@ export async function GET() {
 
     const { data: departments, error } = await supabase
       .from('departments')
-      .select('*, manager:profiles!departments_manager_id_fkey(id, full_name)')
+      .select('*')
       .order('name')
 
     if (error) {
