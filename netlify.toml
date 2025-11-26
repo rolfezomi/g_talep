@@ -11,5 +11,6 @@
 [context.deploy-preview]
   command = "npm run build"
 
-# Next.js plugin handles all routing automatically
-# No manual redirects needed - they break API routes
+# IMPORTANT: Do NOT add [[redirects]] here!
+# The @netlify/plugin-nextjs handles all routing including API routes.
+# A catch-all redirect breaks API routes completely.

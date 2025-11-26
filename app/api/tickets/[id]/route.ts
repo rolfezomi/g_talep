@@ -10,7 +10,11 @@ export async function GET(
     const { id } = await params
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError) {
+      console.error('Auth error:', authError)
+      return NextResponse.json({ error: 'Auth hatasi', details: authError.message }, { status: 401 })
+    }
     if (!user) {
       return NextResponse.json({ error: 'Yetkisiz erisim' }, { status: 401 })
     }
@@ -27,17 +31,18 @@ export async function GET(
       .single()
 
     if (error) {
-      return NextResponse.json({ error: 'Talep bulunamadi' }, { status: 404 })
+      console.error('Ticket fetch error:', error)
+      return NextResponse.json({ error: 'Talep bulunamadi', details: error.message }, { status: 404 })
     }
 
     return NextResponse.json(ticket)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching ticket:', error)
-    return NextResponse.json({ error: 'Sunucu hatasi' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasi', details: error?.message }, { status: 500 })
   }
 }
 
-// PATCH - Talep güncelle (durum, öncelik, atanan kişi vb.)
+// PATCH - Talep güncelle (durum, öncelik vb.)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -45,42 +50,61 @@ export async function PATCH(
   try {
     const { id } = await params
     const supabase = await createClient()
-    const body = await request.json()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    let body
+    try {
+      body = await request.json()
+    } catch (e) {
+      return NextResponse.json({ error: 'Gecersiz JSON body' }, { status: 400 })
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError) {
+      console.error('Auth error:', authError)
+      return NextResponse.json({ error: 'Auth hatasi', details: authError.message }, { status: 401 })
+    }
     if (!user) {
       return NextResponse.json({ error: 'Yetkisiz erisim' }, { status: 401 })
     }
 
     // Kullanıcı profilini al
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single()
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError)
+      return NextResponse.json({ error: 'Profil alinamadi', details: profileError.message }, { status: 500 })
+    }
 
     if (!profile) {
       return NextResponse.json({ error: 'Profil bulunamadi' }, { status: 404 })
     }
 
     // Mevcut talep bilgilerini al
-    const { data: existingTicket } = await supabase
+    const { data: existingTicket, error: ticketError } = await supabase
       .from('tickets')
       .select('*')
       .eq('id', id)
       .single()
 
+    if (ticketError) {
+      console.error('Existing ticket fetch error:', ticketError)
+      return NextResponse.json({ error: 'Talep alinamadi', details: ticketError.message }, { status: 500 })
+    }
+
     if (!existingTicket) {
       return NextResponse.json({ error: 'Talep bulunamadi' }, { status: 404 })
     }
 
-    // Yetki kontrolü: Admin, departman yöneticisi, atanan kişi veya talep oluşturan
+    // Yetki kontrolü: Admin, departman üyesi veya talep oluşturan
     const isAdmin = profile.role === 'admin'
     const isCreator = existingTicket.created_by === user.id
-    const isAssignee = existingTicket.assigned_to === user.id
     const isDepartmentMember = profile.department_id === existingTicket.department_id
 
-    if (!isAdmin && !isCreator && !isAssignee && !isDepartmentMember) {
+    if (!isAdmin && !isCreator && !isDepartmentMember) {
       return NextResponse.json({ error: 'Bu islemi yapmaya yetkiniz yok' }, { status: 403 })
     }
 
@@ -113,13 +137,18 @@ export async function PATCH(
 
     if (error) {
       console.error('Update error:', error)
-      return NextResponse.json({ error: 'Guncelleme basarisiz' }, { status: 500 })
+      return NextResponse.json({
+        error: 'Guncelleme basarisiz',
+        details: error.message,
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 })
     }
 
     return NextResponse.json(updatedTicket)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating ticket:', error)
-    return NextResponse.json({ error: 'Sunucu hatasi' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasi', details: error?.message }, { status: 500 })
   }
 }
 
@@ -132,7 +161,11 @@ export async function DELETE(
     const { id } = await params
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError) {
+      console.error('Auth error:', authError)
+      return NextResponse.json({ error: 'Auth hatasi', details: authError.message }, { status: 401 })
+    }
     if (!user) {
       return NextResponse.json({ error: 'Yetkisiz erisim' }, { status: 401 })
     }
@@ -161,12 +194,12 @@ export async function DELETE(
 
     if (error) {
       console.error('Delete error:', error)
-      return NextResponse.json({ error: 'Silme basarisiz' }, { status: 500 })
+      return NextResponse.json({ error: 'Silme basarisiz', details: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, message: 'Talep basariyla silindi' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting ticket:', error)
-    return NextResponse.json({ error: 'Sunucu hatasi' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasi', details: error?.message }, { status: 500 })
   }
 }

@@ -10,12 +10,12 @@ export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Skip middleware if env vars are not set (build time)
+  // Skip if env vars missing (build time)
   if (!supabaseUrl || !supabaseAnonKey) {
     return supabaseResponse
   }
 
-  // Skip auth check for API routes - they handle their own auth
+  // Skip auth for API routes - they handle their own auth
   if (request.nextUrl.pathname.startsWith('/api/')) {
     return supabaseResponse
   }

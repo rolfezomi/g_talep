@@ -10,7 +10,11 @@ export async function GET(
     const { id } = await params
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError) {
+      console.error('Auth error:', authError)
+      return NextResponse.json({ error: 'Auth hatasi', details: authError.message }, { status: 401 })
+    }
     if (!user) {
       return NextResponse.json({ error: 'Yetkisiz erisim' }, { status: 401 })
     }
@@ -26,13 +30,13 @@ export async function GET(
 
     if (error) {
       console.error('Error fetching comments:', error)
-      return NextResponse.json({ error: 'Yorumlar alinamadi' }, { status: 500 })
+      return NextResponse.json({ error: 'Yorumlar alinamadi', details: error.message }, { status: 500 })
     }
 
     return NextResponse.json(comments)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error)
-    return NextResponse.json({ error: 'Sunucu hatasi' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasi', details: error?.message }, { status: 500 })
   }
 }
 
@@ -44,11 +48,21 @@ export async function POST(
   try {
     const { id } = await params
     const supabase = await createClient()
-    const body = await request.json()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    let body
+    try {
+      body = await request.json()
+    } catch (e) {
+      return NextResponse.json({ error: 'Gecersiz JSON body' }, { status: 400 })
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError) {
+      console.error('Auth error:', authError)
+      return NextResponse.json({ error: 'Auth hatasi', details: authError.message }, { status: 401 })
+    }
     if (!user) {
-      return NextResponse.json({ error: 'Yetkisiz erisim' }, { status: 401 })
+      return NextResponse.json({ error: 'Yetkisiz erisim - kullanici bulunamadi' }, { status: 401 })
     }
 
     // Yorum metni kontrolü
@@ -57,11 +71,16 @@ export async function POST(
     }
 
     // Talep var mı kontrol et
-    const { data: ticket } = await supabase
+    const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .select('id')
       .eq('id', id)
       .single()
+
+    if (ticketError) {
+      console.error('Ticket fetch error:', ticketError)
+      return NextResponse.json({ error: 'Talep kontrol hatasi', details: ticketError.message }, { status: 500 })
+    }
 
     if (!ticket) {
       return NextResponse.json({ error: 'Talep bulunamadi' }, { status: 404 })
@@ -84,13 +103,18 @@ export async function POST(
 
     if (error) {
       console.error('Error creating comment:', error)
-      return NextResponse.json({ error: 'Yorum eklenemedi' }, { status: 500 })
+      return NextResponse.json({
+        error: 'Yorum eklenemedi',
+        details: error.message,
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 })
     }
 
     return NextResponse.json(comment, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error)
-    return NextResponse.json({ error: 'Sunucu hatasi' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasi', details: error?.message }, { status: 500 })
   }
 }
 
@@ -108,7 +132,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Yorum ID gerekli' }, { status: 400 })
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError) {
+      console.error('Auth error:', authError)
+      return NextResponse.json({ error: 'Auth hatasi', details: authError.message }, { status: 401 })
+    }
     if (!user) {
       return NextResponse.json({ error: 'Yetkisiz erisim' }, { status: 401 })
     }
@@ -131,12 +159,12 @@ export async function DELETE(
 
     if (error) {
       console.error('Error deleting comment:', error)
-      return NextResponse.json({ error: 'Yorum silinemedi' }, { status: 500 })
+      return NextResponse.json({ error: 'Yorum silinemedi', details: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, message: 'Yorum silindi' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error)
-    return NextResponse.json({ error: 'Sunucu hatasi' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasi', details: error?.message }, { status: 500 })
   }
 }
