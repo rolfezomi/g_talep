@@ -16,7 +16,10 @@ import {
   Plus,
   Loader2,
   BarChart3,
-  Activity
+  Activity,
+  Building2,
+  Settings,
+  Shield
 } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -294,6 +297,48 @@ export default function DashboardPage() {
           </Button>
         </Link>
       </motion.div>
+
+      {/* Admin Panel - SADECE ADMIN ICIN */}
+      {profile?.role === UserRole.ADMIN && (
+        <motion.div variants={itemVariants}>
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Shield className="h-5 w-5 text-primary" />
+                Admin Paneli
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Link href="/admin/departmanlar">
+                  <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:bg-primary/5">
+                    <Building2 className="h-6 w-6 text-primary" />
+                    <span>Departmanlar</span>
+                  </Button>
+                </Link>
+                <Link href="/admin/kullanicilar">
+                  <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:bg-primary/5">
+                    <Users className="h-6 w-6 text-primary" />
+                    <span>Kullanicilar</span>
+                  </Button>
+                </Link>
+                <Link href="/talepler">
+                  <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:bg-primary/5">
+                    <Ticket className="h-6 w-6 text-primary" />
+                    <span>Tum Talepler</span>
+                  </Button>
+                </Link>
+                <Link href="/ayarlar">
+                  <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-primary hover:bg-primary/5">
+                    <Settings className="h-6 w-6 text-primary" />
+                    <span>Ayarlar</span>
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Stats Grid - SADECE ADMIN ICIN */}
       {profile?.role === UserRole.ADMIN && (
